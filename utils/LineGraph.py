@@ -20,8 +20,8 @@ def create_line_graph_with_angles(G, atoms):
     for edge in G.edges(data=True):
         bond = (edge[0], edge[1])
         bond = tuple(sorted(bond))  # * When adding edges, the order is sorted
-        print(bond)
-        L.add_node(bond, bond_length=edge[2]["weight"])
+        # print(bond)
+        L.add_node(bond, bond_length=edge[2]["bond_length"])
 
     for node in G.nodes():
         neighbors = list(G.neighbors(node))
@@ -58,7 +58,7 @@ def create_line_graph_with_angles(G, atoms):
 def visualize_line_graph(L):
     pos = nx.spring_layout(L, k=1.5, iterations=50, scale=2)
 
-    plt.figure(figsize=(12, 10))
+    plt.figure(2, figsize=(12, 10))
 
     # Draw the nodes of the line graph (representing bonds)
     nx.draw_networkx_nodes(L, pos, node_size=500, node_color="skyblue", alpha=0.8)
@@ -81,4 +81,4 @@ def visualize_line_graph(L):
         fontsize=14,
     )
     plt.axis("off")  # Turn off axis
-    plt.show()
+    # plt.show()

@@ -2,4 +2,6 @@
 *.cif
 *.xyz
 demo.py
+/ligands_xyz
 /__pycache__
+/utils/__pycache__
