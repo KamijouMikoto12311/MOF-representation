@@ -1,3 +1,5 @@
 
 *.cif
 *.xyz
+demo.py
+/__pycache__
