@@ -20,7 +20,6 @@ def create_line_graph_with_angles(G, atoms):
     for edge in G.edges(data=True):
         bond = (edge[0], edge[1])
         bond = tuple(sorted(bond))  # * When adding edges, the order is sorted
-        # print(bond)
         L.add_node(bond, bond_length=edge[2]["bond_length"])
 
     for node in G.nodes():

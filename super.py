@@ -8,8 +8,9 @@ import os
 
 from utils.visualize_molecule_graph import visualize
 from utils.LineGraph import create_line_graph_with_angles, visualize_line_graph
+from utils.compare import remove_duplicate
 
-atoms = ase.io.read("str_m2_o2_o11_pcu_sym.25.cif")
+atoms = ase.io.read("str_m3_o2_o19_nbo_sym.137.cif")
 
 metal_symbols = [
     "Fe",
@@ -43,7 +44,7 @@ supercell = make_supercell(atoms, P)
 
 positions = supercell.get_scaled_positions()
 
-# Identify atoms that are in the central unit cell
+# * Identify atoms that are in the central unit cell
 central_indices = []
 for i, pos in enumerate(positions):
     if all(1 / 3 <= p < 2 / 3 for p in pos):  # Central unit cell in a 3x3x3 supercell
@@ -66,20 +67,25 @@ for i in range(len(supercell)):
 
 output_dir = "ligands_xyz"
 os.makedirs(output_dir, exist_ok=True)
+molecule_list = []
 subgraph_list = []
 visited = set()
 for idx in central_indices:
     if idx not in visited:
         component = nx.node_connected_component(G, idx)
         visited.update(component)  # Mark all nodes in the component as visited
-        subgraph_atoms = supercell[list(component)]
-        subgraph_list.append(subgraph_atoms)
-        ase.io.write(os.path.join(output_dir, f"extracted_subgraph_{idx}.xyz"), subgraph_atoms)
-        
-        subgraph = G.subgraph(component).copy()
-        L = create_line_graph_with_angles(subgraph, supercell)
-        visualize(subgraph, G, idx)
-        visualize_line_graph(L)
-        plt.show()
 
-print(f"Extracted {len(subgraph_list)} subgraphs for central atoms.")
+        subgraph = G.subgraph(component).copy()
+        subgraph_list.append(subgraph)
+
+subgraph_list = remove_duplicate(subgraph_list)
+
+for idx, subgraph in enumerate(subgraph_list):
+    atom_idx = subgraph.nodes
+    molecule = supercell[atom_idx]
+    ase.io.write(os.path.join(output_dir, f"extracted_molecule_{idx+1}.xyz"), molecule)
+
+    L = create_line_graph_with_angles(subgraph, supercell)
+    visualize(subgraph, G, idx)
+    visualize_line_graph(L)
+    plt.show()
