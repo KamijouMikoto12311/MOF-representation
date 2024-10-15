@@ -33,7 +33,7 @@ The script reads the input crystal structure from a `.cif` file named `str_m2_o2
 ### Running the Script
 To run the script:
 ```sh
-python main.py
+python super.py
 ```
 Ensure the necessary input file (`str_m2_o2_o11_pcu_sym.25.cif`) is in the correct location.
 
