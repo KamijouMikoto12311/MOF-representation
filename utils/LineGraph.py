@@ -53,6 +53,47 @@ def create_line_graph_with_angles(G, atoms):
 
     return L
 
+def create_line_graph_with_dihedrals(L, atoms):
+    LL = nx.Graph()
+
+    for edge in L.edges(data=True): # edge = angle
+        angle = (edge[0], edge[1]) # angle = Tuple(bond1, bond2)
+        angle = tuple(sorted(angle))  # * When adding edges, the order is sorted
+        LL.add_node(angle, bond_angle=edge[2]["bond_angle"])
+
+    for node in L.nodes(): # node = bond
+        neighbors = list(L.neighbors(node))
+        if len(neighbors) < 2:
+            continue  # Skip if there are less than two neighbors (no angle can be formed)
+
+        for i in range(len(neighbors)):
+            for j in range(i + 1, len(neighbors)):
+                angle1 = (node, neighbors[i])
+                angle2 = (node, neighbors[j])
+
+                angle1 = tuple(sorted(angle1))
+                angle2 = tuple(sorted(angle2))
+                
+                # TODO: stopped at this point
+
+                pos1 = atoms[neighbors[i]].position
+                pos2 = atoms[neighbors[j]].position
+                pos_center = atoms[node].position
+
+                vector1 = pos1 - pos_center  # Vector A-B
+                vector2 = pos2 - pos_center  # Vector B-C
+
+                angle = calculate_angle(vector1, vector2)
+
+                LL.add_edge(angle1, angle2, bond_angle=angle)
+
+    # for edge in L.edges(data=True):
+    #     print(
+    #         f"Bonds {edge[0]} and {edge[1]} form an angle of {edge[2]['bond_angle']} degrees."
+    #     )
+
+    return LL
+
 
 def visualize_line_graph(L):
     pos = nx.spring_layout(L, k=1.5, iterations=50, scale=2)

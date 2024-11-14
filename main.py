@@ -10,8 +10,7 @@ from utils.visualize_molecule_graph import visualize
 from utils.LineGraph import create_line_graph_with_angles, visualize_line_graph
 from utils.compare import remove_duplicate
 
-atoms = ase.io.read("str_m3_o2_o19_nbo_sym.137.cif")
-
+atoms = ase.io.read("3D-solvent.cif")
 metal_symbols = [
     "Fe",
     "Co",
@@ -41,20 +40,13 @@ atoms = atoms[non_metal_indices]
 
 P = np.eye(3) * 3  # Transformation matrix for 3x3x3 supercell
 supercell = make_supercell(atoms, P)
-
 positions = supercell.get_scaled_positions()
-
-# * Identify atoms that are in the central unit cell
-central_indices = []
-for i, pos in enumerate(positions):
-    if all(1 / 3 <= p < 2 / 3 for p in pos):  # Central unit cell in a 3x3x3 supercell
-        central_indices.append(i)
 
 cutoffs = natural_cutoffs(supercell)
 neigh_list = NeighborList(cutoffs, self_interaction=False, bothways=True)
 neigh_list.update(supercell)
 
-# * Create a graph(G) for supercell
+# * Create a graph(G) for supercell. Note that the index of node is the same as the atom index in supercell!!
 G = nx.Graph()
 for i in range(len(supercell)):
     G.add_node(i, element=supercell[i].symbol, position=supercell.get_positions()[i])
@@ -65,11 +57,18 @@ for i in range(len(supercell)):
             bond_length = supercell.get_distance(i, j, mic=True)
             G.add_edge(i, j, bond_length=bond_length)
 
+
 output_dir = "ligands_xyz"
 os.makedirs(output_dir, exist_ok=True)
 molecule_list = []
 subgraph_list = []
 visited = set()
+# * Identify atoms that are in the central unit cell
+central_indices = []
+for i, pos in enumerate(positions):
+    if all(1 / 3 <= p < 2 / 3 for p in pos):  # Central unit cell in a 3x3x3 supercell
+        central_indices.append(i)
+
 for idx in central_indices:
     if idx not in visited:
         component = nx.node_connected_component(G, idx)
