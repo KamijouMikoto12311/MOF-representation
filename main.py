@@ -7,7 +7,12 @@ import matplotlib.pyplot as plt
 import os
 
 from utils.visualize_molecule_graph import visualize
-from utils.LineGraph import create_line_graph_with_angles, visualize_line_graph
+from utils.LineGraph import (
+    create_line_graph_with_angles,
+    create_line_graph_with_dihedrals,
+    visualize_line_graph_with_angles,
+    visualize_line_graph_with_dihedrals,
+)
 from utils.compare import remove_duplicate
 
 atoms = ase.io.read("3D-solvent.cif")
@@ -85,6 +90,8 @@ for idx, subgraph in enumerate(subgraph_list):
     ase.io.write(os.path.join(output_dir, f"extracted_molecule_{idx+1}.xyz"), molecule)
 
     L = create_line_graph_with_angles(subgraph, supercell)
+    LL = create_line_graph_with_dihedrals(L, supercell)
     visualize(subgraph, G, idx)
-    visualize_line_graph(L)
+    visualize_line_graph_with_angles(L)
+    visualize_line_graph_with_dihedrals(LL)
     plt.show()
