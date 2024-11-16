@@ -8,43 +8,31 @@ def calculate_angle(vector1, vector2):
     unit_vector1 = vector1 / np.linalg.norm(vector1)
     unit_vector2 = vector2 / np.linalg.norm(vector2)
     dot_product = np.dot(unit_vector1, unit_vector2)
-    angle = np.arccos(
-        np.clip(dot_product, -1.0, 1.0)
-    )  # Clamp to handle numerical precision issues
+    angle = np.arccos(np.clip(dot_product, -1.0, 1.0))  # Clamp to handle numerical precision issues
     return np.degrees(angle)
 
 
-def calculate_dihedral(vector1, vector2, vector3):
-    """
-    Calculate the dihedral angle between three vectors.
-    """
-    # Normal vectors of the planes
+def calculate_dihedral(vector1, vector2, vector3, cif_name, processing_idx):
     normal1 = np.cross(vector1, vector2)
     normal2 = np.cross(vector2, vector3)
 
-    # Check for zero vectors, which would lead to NaN
     if np.linalg.norm(normal1) == 0 or np.linalg.norm(normal2) == 0:
-        print("Zero vector encountered in dihedral calculation.")
+        if bool(processing_idx):
+            print(
+                f"{cif_name} >>> molecule_{processing_idx}: Zero vector encountered in dihedral calculation. Probably because of 180° bond angle. Corresponding dihedrals shown as nan."
+            )
+        else:
+            print(f"{cif_name} >>> Zero vector encountered in dihedral calculation. Probably because of 180° bond angle. Corresponding dihedrals shown as nan.")
         return np.nan
 
-    # Normalize the normals
     normal1 /= np.linalg.norm(normal1)
     normal2 /= np.linalg.norm(normal2)
 
-    # Calculate the angle between the two normal vectors
     dot_product = np.dot(normal1, normal2)
-    # Clamp the dot product to avoid numerical issues with arccos
     dot_product = np.clip(dot_product, -1.0, 1.0)
 
     angle = np.arccos(dot_product)
-
-    # Determine the sign using the direction of vector2
-    sign = np.dot(normal1, vector3)
-    if sign < 0:
-        angle = -angle
-
-    print(f"Dihedral angle calculated: {np.degrees(angle):.2f}°")
-    return np.degrees(angle)
+    return 180 - np.degrees(angle)
 
 
 def create_line_graph_with_angles(G, atoms):
@@ -73,7 +61,7 @@ def create_line_graph_with_angles(G, atoms):
                 pos_center = atoms[node].position
 
                 vector1 = pos1 - pos_center  # Vector A-B
-                vector2 = pos2 - pos_center  # Vector B-C
+                vector2 = pos2 - pos_center  # Vector C-B
 
                 angle = calculate_angle(vector1, vector2)
 
@@ -82,44 +70,7 @@ def create_line_graph_with_angles(G, atoms):
     return L
 
 
-# def create_line_graph_with_dihedrals(L, atoms):
-#     LL = nx.Graph()
-
-#     for edge in L.edges(data=True):  # * edge = angle
-#         angle = (edge[0], edge[1])  # * angle = Tuple(bond1, bond2)
-#         angle = tuple(sorted(angle))  # * When adding edges, the order is sorted
-#         LL.add_node(angle, bond_angle=edge[2]["bond_angle"])
-
-#     for node in L.nodes():  # * node = bond
-#         neighbors = list(L.neighbors(node))
-#         if len(neighbors) < 2:
-#             continue  # Skip if there are less than two neighbors (no angle can be formed)
-
-#         for i in range(len(neighbors)):
-#             for j in range(i + 1, len(neighbors)):
-#                 angle1 = (node, neighbors[i])
-#                 angle2 = (node, neighbors[j])
-
-#                 angle1 = tuple(sorted(angle1))
-#                 angle2 = tuple(sorted(angle2))
-
-#                 # TODO: stopped at this point
-
-#                 pos1 = atoms[neighbors[i]].position
-#                 pos2 = atoms[neighbors[j]].position
-#                 pos_center = atoms[node].position
-
-#                 vector1 = pos1 - pos_center  # Vector A-B
-#                 vector2 = pos2 - pos_center  # Vector B-C
-
-#                 angle = calculate_angle(vector1, vector2)
-
-#                 LL.add_edge(angle1, angle2, bond_angle=angle)
-
-#     return LL
-
-
-def create_line_graph_with_dihedrals(L, atoms):
+def create_line_graph_with_dihedrals(L, atoms, all=True, cif_name=None, processing_idx=0):
     """
     Creates a second-level line graph where:
         - Nodes represent angles (edges in L).
@@ -132,68 +83,37 @@ def create_line_graph_with_dihedrals(L, atoms):
     """
     LL = nx.Graph()
 
-    # Add nodes to LL, representing angles
-    for edge in L.edges(data=True):  # Each edge represents an angle
+    for edge in L.edges(data=True):  # * Each edge of L represents an angle
         angle = (edge[0], edge[1])  # Bonds forming the angle
         angle = tuple(sorted(angle))  # Consistent ordering
         LL.add_node(angle, bond_angle=edge[2]["bond_angle"])
 
-    # Add edges to LL, representing dihedrals between angles
-    for node in L.nodes():  # Each node represents a bond
-        neighbors = list(L.neighbors(node))
+    for bond in L.nodes():  # * Each node of L represents a bond
+        neighbors = list(L.neighbors(bond))
+        if len(neighbors) < 2:
+            continue
 
         for i in range(len(neighbors)):
             for j in range(i + 1, len(neighbors)):
-                # Create angle1 and angle2
-                angle1 = (node, neighbors[i])
-                angle2 = (node, neighbors[j])
+                angle1 = (bond, neighbors[i])
+                angle2 = (bond, neighbors[j])
 
-                angle1 = tuple(sorted(angle1))
-                angle2 = tuple(sorted(angle2))
-
-                # Gather all atoms from angle1 and angle2
-                all_atoms = [
-                    angle1[0][0],
-                    angle1[0][1],
-                    angle1[1][0],
-                    angle2[0][0],
-                    angle2[0][1],
-                    angle2[1][0],
-                ]
-
-                # Remove duplicates by converting to a set, then back to a list
-                unique_atoms = list(dict.fromkeys(all_atoms))
-
-                # Check if we have exactly four unique atoms
-                if len(unique_atoms) != 4:
-                    continue  # Skip if we don't have four distinct atoms
-
-                # Assign the four unique atoms to A, B, C, D
-                pos_a = atoms[unique_atoms[0]].position
-                pos_b = atoms[unique_atoms[1]].position
-                pos_c = atoms[unique_atoms[2]].position
-                pos_d = atoms[unique_atoms[3]].position
-
-                # Calculate vectors
-                vector_ab = pos_b - pos_a  # A -> B
-                vector_bc = pos_c - pos_b  # B -> C
-                vector_cd = pos_d - pos_c  # C -> D
-
-                # Check for zero vectors before calculating dihedral
-                if (
-                    np.linalg.norm(vector_ab) == 0
-                    or np.linalg.norm(vector_bc) == 0
-                    or np.linalg.norm(vector_cd) == 0
-                ):
-                    print("Zero vector encountered in dihedral calculation. Skipping.")
+                if bool(set(neighbors[i]) & set(neighbors[j])) and not all:
                     continue
 
-                # Calculate dihedral angle
-                dihedral_angle = calculate_dihedral(vector_ab, vector_bc, vector_cd)
+                else:
+                    a, b = [(a, b) for a in range(len(bond)) for b in range(len(neighbors[i])) if bond[a] == neighbors[i][b]][0]
+                    _, d = [(c, d) for c in range(len(bond)) for d in range(len(neighbors[j])) if bond[c] == neighbors[j][d]][0]
+                    vector_1 = atoms[neighbors[i][0 if b == 1 else 1]].position - atoms[neighbors[i][b]].position
+                    vector_share = atoms[bond[0 if a == 1 else 1]].position - atoms[bond[a]].position
+                    vector_2 = atoms[neighbors[j][0 if d == 1 else 1]].position - atoms[neighbors[j][d]].position
 
-                # Add edge to the second-level line graph LL
-                LL.add_edge(angle1, angle2, dihedral_angle=dihedral_angle)
+                    dihedral = calculate_dihedral(vector_1, vector_share, vector_2, cif_name, processing_idx)
 
+                    angle1 = tuple(sorted(angle1))
+                    angle2 = tuple(sorted(angle2))
+
+                    LL.add_edge(angle1, angle2, dihedral_angle=dihedral)
     return LL
 
 
@@ -205,9 +125,7 @@ def visualize_line_graph_with_angles(L):
     nx.draw_networkx_nodes(L, pos, node_size=500, node_color="skyblue", alpha=0.8)
     nx.draw_networkx_edges(L, pos, edge_color="gray", width=2)
     node_labels = {node: f"Bond {node}" for node in L.nodes()}
-    nx.draw_networkx_labels(
-        L, pos, labels=node_labels, font_size=10, font_color="black"
-    )
+    nx.draw_networkx_labels(L, pos, labels=node_labels, font_size=10, font_color="black")
     edge_labels = {(u, v): f"{d['bond_angle']:.1f}°" for u, v, d in L.edges(data=True)}
     nx.draw_networkx_edge_labels(L, pos, edge_labels=edge_labels, font_size=9)
     plt.title(
@@ -218,19 +136,15 @@ def visualize_line_graph_with_angles(L):
 
 
 def visualize_line_graph_with_dihedrals(LL):
-    pos = nx.spring_layout(LL, k=1.5, iterations=50, scale=2)
+    pos = nx.spring_layout(LL, k=2.0, iterations=50, scale=2)
 
     plt.figure(3, figsize=(12, 10))
 
     nx.draw_networkx_nodes(LL, pos, node_size=500, node_color="lightgreen", alpha=0.8)
     nx.draw_networkx_edges(LL, pos, edge_color="purple", width=2)
     node_labels = {node: f"Angle {node}" for node in LL.nodes()}
-    nx.draw_networkx_labels(
-        LL, pos, labels=node_labels, font_size=10, font_color="black"
-    )
-    edge_labels = {
-        (u, v): f"{d['dihedral_angle']:.1f}°" for u, v, d in LL.edges(data=True)
-    }
+    nx.draw_networkx_labels(LL, pos, labels=node_labels, font_size=10, font_color="black")
+    edge_labels = {(u, v): f"{d['dihedral_angle']:.1f}°" for u, v, d in LL.edges(data=True)}
     nx.draw_networkx_edge_labels(LL, pos, edge_labels=edge_labels, font_size=9)
 
     plt.title(
