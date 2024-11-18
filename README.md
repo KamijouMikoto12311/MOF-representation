@@ -1,7 +1,7 @@
 # README
 
 ## Overview
-This script (`main.py`) processes crystal structure data, generates a supercell, identifies atoms within a central unit cell, and creates molecular subgraphs based on atomic connectivity. It extracts the ligands from the crystal structure and visualizes both the molecule and line graphs with detailed bond analysis.
+This repo gives a solution to processesing crystal structure data and creates molecular subgraphs based on atomic connectivity. It extracts the ligands from the crystal structure and visualizes both the molecule, line graphs and 2nd-order linegraph with detailed bond and dihedral analysis.
 
 ## Requirements
 The following Python packages are required to run the script:
@@ -12,23 +12,26 @@ The following Python packages are required to run the script:
 
 To install these packages, you can use the command:
 ```sh
-pip install ase networkx numpy matplotlib
+pip install -r requirements.txt
+```
+or with conda:
+```sh
+conda env create -f environment.yml
 ```
 
 ## Usage
-### Input
-The script reads the input crystal structure from a `.cif` file named `3D-solvent.cif` by defaault. Change this into the cif file you want to analyze. Ensure that the input file is located in the same directory as the script or modify the code accordingly.
 
-### Running the Script
-To run the script:
+Put all the `cif` files in `./cifs/` and run:
 ```sh
 python main.py
 ```
-Ensure the necessary input file (`3D-solvent.cif`) is in the correct location.
+or run:
+```sh
+python multi_processor.py
+```
+for multi-processing.
+(If there is no `./cifs/`, just create one, or directly run the script, which will create one).
 
-### Output
-- Extracted molecules are saved in the `ligands_xyz` directory with filenames like `extracted_molecule_X.xyz`, where `X` is the index of the molecule.
-- Visualization of the molecules and their line graphs is displayed using `matplotlib`.
 
 
 ## Notes

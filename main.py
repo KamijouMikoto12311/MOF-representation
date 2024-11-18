@@ -9,7 +9,7 @@ import warnings
 import shutil
 
 from utils.visualize_molecule_graph import visualize
-from utils.LineGraph import (
+from utils.line_graph import (
     create_line_graph_with_angles,
     create_line_graph_with_dihedrals,
     visualize_line_graph_with_angles,
@@ -43,7 +43,7 @@ metal_symbols = [
 ]
 
 input_dir = "cifs"
-output_dir = "ligands_xyz"
+output_dir = "ligands"
 processed_dir = "processed_cifs"
 os.makedirs(input_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)

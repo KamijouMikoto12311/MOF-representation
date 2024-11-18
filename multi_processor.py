@@ -9,7 +9,7 @@ from ase.build import make_supercell
 from ase.neighborlist import NeighborList, natural_cutoffs
 from concurrent.futures import ProcessPoolExecutor
 from utils.visualize_molecule_graph import visualize
-from utils.LineGraph import (
+from utils.line_graph import (
     create_line_graph_with_angles,
     create_line_graph_with_dihedrals,
     visualize_line_graph_with_angles,
@@ -43,7 +43,7 @@ METAL_SYMBOLS = [
 ]
 
 INPUT_DIR = "cifs"
-OUTPUT_DIR = "ligands_xyz"
+OUTPUT_DIR = "ligands"
 PROCESSED_DIR = "processed_cifs"
 os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -52,6 +52,7 @@ os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 def process_file(file_path):
     """Process a single file to extract molecular structures and generate visualizations."""
+
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     print(f"Processing >>> {file_path}")
 
