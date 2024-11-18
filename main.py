@@ -102,7 +102,7 @@ for filename in os.listdir(input_dir):
     os.makedirs(this_output_dir, exist_ok=True)
 
     for idx, subgraph in enumerate(subgraph_list):
-        this_molecule_output_dir = os.path.join(this_output_dir, f"molecule_{idx}")
+        this_molecule_output_dir = os.path.join(this_output_dir, f"molecule_{idx+1}")
         os.makedirs(this_molecule_output_dir, exist_ok=True)
 
         atom_idx = subgraph.nodes
